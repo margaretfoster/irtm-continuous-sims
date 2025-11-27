@@ -5,6 +5,8 @@ Meta
 
 # Session Data files
 .RData
+.rds
+.Rds
 *.DS_Store
 *.*~
 
