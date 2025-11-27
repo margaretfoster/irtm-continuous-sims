@@ -3,8 +3,23 @@
 ## Then run all requested resuls
 
 run_one_sim <- function(param, control) {
-  
+  ## parallel worker scope begins
   tryCatch({
+    
+    ## reload packages for parallel workers:
+    library(MASS)
+    library(mvtnorm)
+    library(coda)
+    library(nimble)
+    library(pscl)
+    library(sn)
+    
+    ## source script for workers:
+    source("monitornew.R")
+    source("helpers.R")    # defines mse, coverage, geweke_fcn, ess_fcn, etc.
+    source("run_model.R") #calls IRT-M with params passed in by sim_one_call.
+    source("sim_utils.R") # generate_y(), post-MCMC processing
+    source("irtm_cont_results_to_df.R") ## flatten results list to df:
     # param: list with N, K, d, dist_type, sim
     # control: list with nsamp, nburn, thin, nchains, lambda_zero_pct, methods
     

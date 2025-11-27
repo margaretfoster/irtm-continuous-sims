@@ -16,9 +16,10 @@ devtools::load_all("~/Dropbox/IRTM-Pkg/IRTM")
 
 source("monitornew.R")
 source("helpers.R")    # defines mse, coverage, geweke_fcn, ess_fcn, etc.
-source("sim_utils.R")
-source("run_model.R")
-source("sim_one_call.R")
+source("sim_one_call.R") #generates Y according to passed-in params and calls IRT-M for 
+source("run_model.R") #calls IRT-M with params passed in by sim_one_call.
+source("sim_utils.R") # takes irtm MCMC results specified in run model, handles processing for metrics
+source("irtm_cont_results_to_df.R") ## flatten results list to df:
 
 ## paths:
 simpath  <- "../simulations/"
@@ -86,8 +87,6 @@ all_methods <- c(
 
 ## Subset for run:
 sim_methods <- c("irtM", "irtMAnchors", "benchmark")
-# or:
-# sim_methods <- all_methods
 
 sim_control <- list(
   nsamp = nsamp,
@@ -115,17 +114,21 @@ n_cores <- max(1, n_cores)
 
 all_res <- mclapply(
   X           = param_list,
-  FUN         = run_one_sim,
+  FUN         = run_one_sim, #insim_one_call.R
   control     = sim_control,
   mc.cores    = n_cores,
   mc.set.seed = TRUE
 )
 
+## How many runs errored out:
+num_errors <- sum(sapply(all_res, function(x) "error" %in% names(x)))
+num_errors #849. All
+
 ##------- Save raw results -------##
 save(all_res,
-     file = file.path(simpath, "irtm_cont_parallel.Rds"))
+     file = file.path(simpath, "irtm_cont_parallel_1127.Rds"))
 
 ## Tidydf form:
 results_df <- irtm_cont_results_to_df(all_res)
 saveRDS(results_df,
-        file = file.path(simpath, "irtm_cont_parallel_df.rds"))
+        file = file.path(simpath, "irtm_cont_parallel_df_1127.rds"))

@@ -9,12 +9,10 @@ simpath = "../simulations/"
 plotpath = "../simulations/results/figures/"
 
 ## Load:
-all_res <- readRDS(paste0(simpath, "small_cont.rds"))
 
-## Convert results list to dataframe:
+results_df<- readRDS(paste0(simpath, "irtm_cont_parallel_df.rds"))
 
-results_df <- irtm_cont_results_to_df(all_res)
-
+rm(all_res)
 ## recover the parameters:
 head(results_df)
 print(unique(results_df$model)) # models run
@@ -171,7 +169,7 @@ p_box_lambda <- ggplot(results_df_clean,
                                "IRT-M + Anchors", 
                                "Perfect Information")) +
   labs(x = "Dimension (d)",
-       y = expression(lambda~Cov),
+       y = expression(lambda~Cor),
        title = "Cov. Estimated vs True Lambda Under Distributional Forms",
        subtitle = "IRT-M Continuous Extension",
        caption = "Lines at Lambda Covariance =  0.25 and .75") +
