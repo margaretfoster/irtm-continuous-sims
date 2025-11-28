@@ -73,7 +73,7 @@ nchains <- 1
 
 lambda_zero_pct <- 0  # fraction of lambda entries zeroed
 
-## Full method universe:
+## list of supported methods:
 # extend by adding new methods to run_iter_cont()
 ## and updating below:
 all_methods <- c(

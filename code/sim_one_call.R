@@ -28,6 +28,7 @@ run_one_sim <- function(param, control) {
     d         <- param$d
     sim       <- param$sim
     dist_type <- param$dist_type
+    dist_type <- as.character(dist_type) # type validate
     
     nsamp           <- control$nsamp
     nburn           <- control$nburn
@@ -114,7 +115,7 @@ run_one_sim <- function(param, control) {
       true_theta
     )
     
-    # generate Y
+    # create Y
     true_Z <- matrix(NA_real_, N, K)
     Y      <- matrix(NA_real_, N, K)
     for (i in 1:N) {

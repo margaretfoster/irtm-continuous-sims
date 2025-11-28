@@ -10,14 +10,12 @@ plotpath = "../simulations/results/figures/"
 
 ## Load:
 
-results_df<- readRDS(paste0(simpath, "irtm_cont_parallel_df.rds"))
+results_df<- readRDS(paste0(simpath, "irtm_cont_parallel_df_1127.rds"))
 
-rm(all_res)
 ## recover the parameters:
 head(results_df)
 print(unique(results_df$model)) # models run
-#"benchmark"     "unconstrained" "irtM"          "irtMnoVar"    
-#"irtAnchors"    "irtMAnchors"  
+#"benchmark"     "irtM"    "irtMAnchors"  
 
 print(unique(results_df$dist_type))
 #normal     heavy_t    skewed     mixture    bounded    log_normal
@@ -69,7 +67,9 @@ results_df_clean <- results_df %>%
     model = factor(
       model,
       levels = c("irtM", "irtMAnchors", "benchmark"),
-      labels = c("IRT-M", "IRT-M + Anchors", "Perfect Information")
+      labels = c("IRT-M", 
+                 "IRT-M + Anchored Thetas", 
+                 "Perfect Information")
     ),
     dist_type = factor(dist_type, 
                        levels = c("normal", "heavy_t",
@@ -88,11 +88,11 @@ results_df_clean <- results_df %>%
 # Colorblind-safe palette
 cb_palette <- c(
   "IRT-M" = "#E69F00",
-  "IRT-M + Anchors" = "#0072B2", 
+  "IRT-M + Anchored Thetas" = "#0072B2", 
   "Perfect Information" = "#009E73"
 )
 
-p_box <- ggplot(results_df_clean,
+p_box_theta_mse <- ggplot(results_df_clean,
                 aes(x = d,
                     y = theta_mse,
                     fill = model)) +
@@ -103,7 +103,7 @@ p_box <- ggplot(results_df_clean,
   facet_grid(N ~ dist_type,
              scales = "fixed",
              switch = "y") +
-  ylim(0, 3) + #NOTE: bounded b/c high benchmark outliers
+  ylim(0, 5) + #NOTE: bounded b/c high benchmark outliers
   scale_fill_manual(values = cb_palette,
                     name = "Model",
                     labels = c("IRT-M",
@@ -140,18 +140,18 @@ p_box <- ggplot(results_df_clean,
                               face = "bold", size = 15)
   )
 
-p_box
+p_box_theta_mse
 
-ggsave(p_box, 
+ggsave(p_box_theta_mse, 
        width = 16,      # wide enough for 7 columns
        height = 9,      # room for title + legend
        dpi = 320,
        units = "in",
        file= paste0(plotpath,
-                    "initial_sims_msegrid.png"))
+                    "initial_sims_theta_mse.png"))
 
 ## Elegant lambda MSE plot:
-p_box_lambda <- ggplot(results_df_clean,
+p_box_lambda_mse <- ggplot(results_df_clean,
                        aes(x = d,
                            y = lambda_mse,
                            fill = model)) +
@@ -159,28 +159,82 @@ p_box_lambda <- ggplot(results_df_clean,
                outlier.shape = 19,
                outlier.size = 1,
                linewidth = 0.4) +
-  ylim(0, 3) + #NOTE: bounded b/c high benchmark outliers
+  ylim(0, 5) + #NOTE: bounded b/c high benchmark outliers
   facet_grid(N ~ dist_type,
              scales = "fixed",
              switch = "y") +
   scale_fill_manual(values = cb_palette,
                     name = "Model",
                     labels = c("IRT-M",
-                               "IRT-M + Anchors", 
+                               "IRT-M + Anchored Thetas", 
                                "Perfect Information")) +
   labs(x = "Dimension (d)",
-       y = expression(lambda~Cor),
-       title = "Cov. Estimated vs True Lambda Under Distributional Forms",
+       y = expression(lambda~MSE),
+       title = "Lambda MSE",
        subtitle = "IRT-M Continuous Extension",
-       caption = "Lines at Lambda Covariance =  0.25 and .75") +
+       caption = "Plot bounded at Y = 5") +
+  theme_bw(base_size = 14) +
+  theme(
+    strip.background = element_rect(fill = "white",
+                                    color = "black"),
+    strip.text = element_text(face = "bold", size = 13),
+    legend.position = "bottom",
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 11),
+    axis.title = element_text(size = 13),
+    axis.text = element_text(size = 11),
+    panel.grid.major = element_line(color = "grey90",
+                                    linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5,
+                              face = "bold", size = 15)
+  )
+
+p_box_lambda_mse
+
+ggsave(p_box_lambda_mse, 
+       width = 16,      # wide enough for 7 columns
+       height = 9,      # room for title + legend
+       dpi = 320,
+       units = "in",
+       file= paste0(plotpath,
+                    "initial_sims_lambda_mse.png"))
+
+
+## Lambda correlation:
+
+## Elegant lambda Corr plot:
+p_box_lambda_corr <- ggplot(results_df_clean,
+                       aes(x = d,
+                           y = lambda_corr,
+                           fill = model)) +
+  geom_boxplot(alpha = 0.7,
+               outlier.shape = 19,
+               outlier.size = 1,
+               linewidth = 0.4) +
+  ylim(-.1, 1) + # bound Y b/c corr should be [0, 1]
+  facet_grid(N ~ dist_type,
+             scales = "fixed",
+             switch = "y") +
+  scale_fill_manual(values = cb_palette,
+                    name = "Model",
+                    labels = c("IRT-M",
+                               "IRT-M + Anchored Thetas", 
+                               "Perfect Information")) +
+  labs(x = "Dimension (d)",
+       y = expression(lambda~Corr),
+       title = "Correlation Estimated vs True Lambda Under Distributional Forms",
+       subtitle = "IRT-M Continuous Extension",
+       caption = "Y bounded [-0.1, 1]") +
   theme_bw(base_size = 14) +
   geom_hline(yintercept = .75, #High cov 
              linetype = "dashed",
              color = "lightgray", 
              size = 0.5) +
-  geom_hline(yintercept = 0.25, ## no covariance
+  geom_hline(yintercept = 0, ## no covariance
              linetype = "dashed",
-             color = "lightgray",
+             color = "red",
+             alpha =.25,
              size = 0.5) +
   theme_bw(base_size = 14) +
   theme(
@@ -199,12 +253,13 @@ p_box_lambda <- ggplot(results_df_clean,
                               face = "bold", size = 15)
   )
 
-p_box_lambda
+p_box_lambda_corr
 
-ggsave(p_box_lambda, 
+ggsave(p_box_lambda_corr, 
        width = 16,      # wide enough for 7 columns
        height = 9,      # room for title + legend
        dpi = 320,
        units = "in",
        file= paste0(plotpath,
-                    "initial_sims_lambda_covgrid.png"))
+                    "initial_sims_lambda_corr.png"))
+

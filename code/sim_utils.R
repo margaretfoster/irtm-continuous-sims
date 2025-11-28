@@ -1,53 +1,56 @@
 
 ## code to produce different forms of continuous Y:
 generate_Y <- function(mu, dist_type) {
-  switch(dist_type,
-         
-         "normal" = mu + rnorm(1, 0, 1),
-         
-         "heavy_t" = mu + rt(1, df = 3),
-         
-         "skewed" = {
-           # skew-normal via sn package:
-           sn::rsn(1, xi = mu, omega = 1, alpha = 5)
-         },
-         
-         "bounded" = {
-           val <- mu + rnorm(1,0,1)
-           pmax(pmin(val, 3), -3)
-         },
-         
-         "mixture" = {
-           if(runif(1) < 0.9) {
-             mu + rnorm(1, 0, 1)
-           } else {
-             mu + rnorm(1, 0, 5)
-           }
-         },
-         
-         "power_law" = {
-           # Shifted Pareto-like heavy tail
-           ## commonly found in social processes
-           xm <- 1
-           alpha <- 2.5
-           x <- xm * (runif(1))^(-1/alpha)
-           mu + x
-         },
-         "log_normal" = {
-           ## better behaved than pareto
-           ## also common in behavioral data
-           sigma <- 1.5
-           x <- rlnorm(1, meanlog = 0, sdlog = sigma)
-           mu + x
-         },
-         
-         stop("Unknown distribution type")
+  dist_type <- as.character(dist_type)   # avoid factor warnings
+  
+  switch(
+    dist_type,
+    
+    "normal" = {
+      mu + rnorm(1, 0, 1)
+    },
+    
+    "heavy_t" = {
+      mu + rt(1, df = 3)
+    },
+    
+    "skewed" = {
+      sn::rsn(1, xi = mu, omega = 1, alpha = 5)
+    },
+    
+    "bounded" = {
+      val <- mu + rnorm(1, 0, 1)
+      pmax(pmin(val, 3), -3)
+    },
+    
+    "mixture" = {
+      if (runif(1) < 0.9) {
+        mu + rnorm(1, 0, 1)
+      } else {
+        mu + rnorm(1, 0, 5)
+      }
+    },
+    
+    "power_law" = {
+      xm    <- 1
+      alpha <- 2.5
+      x     <- xm * (runif(1))^(-1 / alpha)
+      mu + x
+    },
+    
+    "log_normal" = {
+      sigma <- 1.5
+      x     <- rlnorm(1, meanlog = 0, sdlog = sigma)
+      mu + x
+    },
+    
+    stop("Unknown distribution type: ", dist_type)
   )
 }
 
 update_method_metrics <- function(
     method_name,
-    irt_res,#irt-m sampler ouput
+    irt_res,#irt-m sampler output
     true_theta, true_lambda,
     theta_mse, lambda_mse,
     theta_coverage, lambda_coverage,
@@ -55,20 +58,27 @@ update_method_metrics <- function(
     lambda_corr
 ) {
   
-  ## pull MCMC sampler out of the resluts:
+  ## pull MCMC sampler out of the results:
   theta_draws  <- irt_res$theta
   lambda_draws <- irt_res$lambda
   
-  ## Convert MCMC draw to point estimates
-  ## via the mean:
-  theta_point <- if (length(dim(theta_draws)) == 3) {
-    apply(theta_draws, c(1, 2), mean)
-  } else theta_draws
+  ## Trim if there are fake anchor points
+  ## which will add more rows than the true
+  ## anchors always the first 2*d rows:
   
+  n_true <- nrow(true_theta)
+  n_all  <- dim(theta_draws)[1]
   
-  lambda_point <- if (length(dim(lambda_draws)) == 3) {
-    apply(lambda_draws, c(1, 2), mean)
-  } else lambda_draws
+  if (n_all > n_true) {
+    n_fake <- n_all - n_true
+    theta_draws <- theta_draws[(n_fake+1):n_all, , , drop=FALSE]
+  } else {
+    theta_draws <- theta_draws
+  }
+  
+  ## --- Compute posterior means (point estimates) ---
+  theta_point  <- apply(theta_draws,  c(1, 2), mean)   # N x d
+  lambda_point <- apply(lambda_draws, c(1, 2), mean)   # K x d
   
   ## Verify lambda shape to K × d
   if (!all(dim(lambda_point) == dim(true_lambda))) {
@@ -101,6 +111,8 @@ update_method_metrics <- function(
   theta_rhat[method_name] <- NA_real_  # nchains = 1
   
   ## Correlation only if lengths match
+  #browser() #for debugging
+  
   if (all(dim(lambda_point) == dim(true_lambda))) {
     la <- as.numeric(lambda_point)
     tl <- as.numeric(true_lambda)

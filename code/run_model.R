@@ -28,6 +28,7 @@ run_iter_cont <- function(
   #--------------------------------------#
   if ("benchmark" %in% methods) {
     message("Running benchmark...")
+    
     irt_res <- M_constrained_irt_continuous(
       Y, d, M = NULL,
       theta_fix = z, which_fix = ind,
@@ -38,11 +39,9 @@ run_iter_cont <- function(
     
     updated <- update_method_metrics(
       method_name      = "benchmark",
-      theta_avg        = irt_res$theta,
-      lambda_avg       = irt_res$lambda,
+      irt_res          = irt_res,
       true_theta       = true_theta,
       true_lambda      = true_lambda,
-      irt_res          = irt_res,
       theta_mse        = theta_mse,
       lambda_mse       = lambda_mse,
       theta_coverage   = theta_coverage,
@@ -78,13 +77,12 @@ run_iter_cont <- function(
       display_progress = progress
     )
     
+  
     updated <- update_method_metrics(
       method_name      = "unconstrained",
-      theta_avg        = irt_res$theta,
-      lambda_avg       = irt_res$lambda,
+      irt_res          = irt_res,
       true_theta       = true_theta,
       true_lambda      = true_lambda,
-      irt_res          = irt_res,
       theta_mse        = theta_mse,
       lambda_mse       = lambda_mse,
       theta_coverage   = theta_coverage,
@@ -93,7 +91,7 @@ run_iter_cont <- function(
       theta_ess        = theta_ess,
       theta_rhat       = theta_rhat,
       lambda_corr      = lambda_corr
-    )
+    ) #fix
     
     theta_mse       <- updated$theta_mse
     lambda_mse      <- updated$lambda_mse
@@ -109,23 +107,27 @@ run_iter_cont <- function(
   
   #--------------------------------------#
   # irtM (full M constraint)
+  ## M constraint, anchor points
+  ## Theta not fixed to anchors
+  ## looser identification
   #--------------------------------------#
   if ("irtM" %in% methods) {
     message("Running M-constrained IRT...")
     irt_res <- M_constrained_irt_continuous(
       Yall, d, M = M,
-      theta_fix = NULL, which_fix = NULL,
+      theta_fix = NULL, 
+      which_fix = NULL,
       nburn = nburn, nsamp = nsamp, thin = thin,
       learn_Sigma = TRUE, display_progress = progress
     )
+    ## debug print:
+    str(irt_res$theta)
     
     updated <- update_method_metrics(
       method_name      = "irtM",
-      theta_avg        = irt_res$theta,
-      lambda_avg       = irt_res$lambda,
-      true_theta       = true_theta_all,
-      true_lambda      = true_lambda,
       irt_res          = irt_res,
+      true_theta       = true_theta,
+      true_lambda      = true_lambda,
       theta_mse        = theta_mse,
       lambda_mse       = lambda_mse,
       theta_coverage   = theta_coverage,
@@ -134,7 +136,7 @@ run_iter_cont <- function(
       theta_ess        = theta_ess,
       theta_rhat       = theta_rhat,
       lambda_corr      = lambda_corr
-    )
+    ) #fix
     
     theta_mse       <- updated$theta_mse
     lambda_mse      <- updated$lambda_mse
@@ -163,11 +165,9 @@ run_iter_cont <- function(
     
     updated <- update_method_metrics(
       method_name      = "irtMNoVar",
-      theta_avg        = irt_res$theta,
-      lambda_avg       = irt_res$lambda,
-      true_theta       = true_theta_all,
-      true_lambda      = true_lambda,
       irt_res          = irt_res,
+      true_theta       = true_theta,
+      true_lambda      = true_lambda,
       theta_mse        = theta_mse,
       lambda_mse       = lambda_mse,
       theta_coverage   = theta_coverage,
@@ -176,7 +176,7 @@ run_iter_cont <- function(
       theta_ess        = theta_ess,
       theta_rhat       = theta_rhat,
       lambda_corr      = lambda_corr
-    )
+    ) #fix
     
     theta_mse       <- updated$theta_mse
     lambda_mse      <- updated$lambda_mse
@@ -192,6 +192,7 @@ run_iter_cont <- function(
   
   #--------------------------------------#
   # Anchors only
+  # IRT, anchors no M
   #--------------------------------------#
   if ("irtAnchors" %in% methods) {
     message("Running IRT with anchors...")
@@ -203,13 +204,12 @@ run_iter_cont <- function(
       display_progress = progress
     )
     
+    
     updated <- update_method_metrics(
       method_name      = "irtAnchors",
-      theta_avg        = irt_res$theta,
-      lambda_avg       = irt_res$lambda,
-      true_theta       = true_theta_all,
-      true_lambda      = true_lambda,
       irt_res          = irt_res,
+      true_theta       = true_theta,
+      true_lambda      = true_lambda,
       theta_mse        = theta_mse,
       lambda_mse       = lambda_mse,
       theta_coverage   = theta_coverage,
@@ -234,6 +234,9 @@ run_iter_cont <- function(
   
   #--------------------------------------#
   # IRTM with anchors + M
+  ## This fixes theta for the anchored rows
+  ## hard orientation constraint; 
+  ## stronger identification
   #--------------------------------------#
   if ("irtMAnchors" %in% methods) {
     message("Running IRT with M and anchors...")
@@ -247,11 +250,9 @@ run_iter_cont <- function(
     
     updated <- update_method_metrics(
       method_name      = "irtMAnchors",
-      theta_avg        = irt_res$theta,
-      lambda_avg       = irt_res$lambda,
-      true_theta       = true_theta_all,
-      true_lambda      = true_lambda,
       irt_res          = irt_res,
+      true_theta       = true_theta,
+      true_lambda      = true_lambda,
       theta_mse        = theta_mse,
       lambda_mse       = lambda_mse,
       theta_coverage   = theta_coverage,
