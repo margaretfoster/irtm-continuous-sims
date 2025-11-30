@@ -10,7 +10,7 @@ plotpath = "../simulations/results/figures/"
 
 ## Load:
 
-results_df<- readRDS(paste0(simpath, "irtm_cont_parallel_df_1127.rds"))
+results_df<- readRDS(paste0(simpath, "irtm_cont_parallel_df_benchmarkvariant.rds"))
 
 ## recover the parameters:
 head(results_df)
@@ -22,6 +22,20 @@ print(unique(results_df$dist_type))
 #power_law 
 print(unique(results_df$K)) #10, 50
 print(unique(results_df$N)) #50, 100,500
+
+## Plotting consistencies:
+models = c("irtM", "irtMAnchors", "benchmark", "benchmark_learnsigma")
+model_plotnames = c("IRT-M",
+                    "IRT-M + Anchored Thetas", 
+                    "Theta Oracle", 
+                    "Theta Oracle + Learn Sigma")
+
+cb_palette <- c(
+  "IRT-M" = "#E69F00",
+  "IRT-M + Anchored Thetas" = "#0072B2", 
+  "Theta Oracle" = "#009E73",
+  "Theta Oracle + Learn Sigma" = "#CC79A7"
+)
 
 ### Thetas:
 p_theta <- results_df %>%
@@ -62,14 +76,12 @@ p_lambda
 # Boxplot of theta:
 
 results_df_clean <- results_df %>%
-  filter(model %in% c("irtM", "irtMAnchors", "benchmark")) %>%
+  filter(model %in% models) %>%
   mutate(
     model = factor(
       model,
-      levels = c("irtM", "irtMAnchors", "benchmark"),
-      labels = c("IRT-M", 
-                 "IRT-M + Anchored Thetas", 
-                 "Perfect Information")
+      levels = models,
+      labels = model_plotnames
     ),
     dist_type = factor(dist_type, 
                        levels = c("normal", "heavy_t",
@@ -85,12 +97,6 @@ results_df_clean <- results_df %>%
     N = factor(N, levels = sort(unique(N)))
   )
 
-# Colorblind-safe palette
-cb_palette <- c(
-  "IRT-M" = "#E69F00",
-  "IRT-M + Anchored Thetas" = "#0072B2", 
-  "Perfect Information" = "#009E73"
-)
 
 p_box_theta_mse <- ggplot(results_df_clean,
                 aes(x = d,
@@ -106,9 +112,7 @@ p_box_theta_mse <- ggplot(results_df_clean,
   ylim(0, 5) + #NOTE: bounded b/c high benchmark outliers
   scale_fill_manual(values = cb_palette,
                     name = "Model",
-                    labels = c("IRT-M",
-                               "IRT-M + Anchors", 
-                               "Perfect Information")) +
+                    labels = model_plotnames) +
   labs(x = "Dimension (d)",
        y = expression(Theta~MSE),
        title = "Estimation Error Under Distributional Forms",
@@ -165,9 +169,7 @@ p_box_lambda_mse <- ggplot(results_df_clean,
              switch = "y") +
   scale_fill_manual(values = cb_palette,
                     name = "Model",
-                    labels = c("IRT-M",
-                               "IRT-M + Anchored Thetas", 
-                               "Perfect Information")) +
+                    labels = model_plotnames) +
   labs(x = "Dimension (d)",
        y = expression(lambda~MSE),
        title = "Lambda MSE",
@@ -218,9 +220,7 @@ p_box_lambda_corr <- ggplot(results_df_clean,
              switch = "y") +
   scale_fill_manual(values = cb_palette,
                     name = "Model",
-                    labels = c("IRT-M",
-                               "IRT-M + Anchored Thetas", 
-                               "Perfect Information")) +
+                    labels = model_plotnames) +
   labs(x = "Dimension (d)",
        y = expression(lambda~Corr),
        title = "Correlation Estimated vs True Lambda Under Distributional Forms",

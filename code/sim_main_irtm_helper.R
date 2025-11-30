@@ -1,5 +1,8 @@
-## sim_main.R
-## Top-level control script for IRT-M continuous simulations
+## sim_irtm_helper.R
+## Control script to compare the error in the 
+## continuous case for the irt_m() helper 
+## without anchor points
+## from the cases we already know
 
 library(MASS)
 library(mvtnorm)
@@ -14,10 +17,11 @@ library(dplyr)
 ## Note: before IRTM continuous resubmitted to CRAN load locally via:
 devtools::load_all("~/Dropbox/IRTM-Pkg/IRTM")
 
+##!! TODO: Change the helpers to the irtm helper version
 source("monitornew.R")
 source("helpers.R")    # defines mse, coverage, geweke_fcn, ess_fcn, etc.
-source("sim_one_call.R") #generates Y according to passed-in params and calls IRT-M for 
-source("run_model.R") #calls IRT-M with params passed in by sim_one_call.
+source("sim_one_call_irtmhelper.R") #generates Y according to passed-in params and calls IRT-M for 
+source("run_model_irtmhelper.R") #calls IRT-M with params passed in by sim_one_call.
 source("sim_utils.R") # takes irtm MCMC results specified in run model, handles processing for metrics
 source("irtm_cont_results_to_df.R") ## flatten results list to df:
 
@@ -76,18 +80,12 @@ lambda_zero_pct <- 0  # fraction of lambda entries zeroed
 ## list of supported methods:
 # extend by adding new methods to run_iter_cont()
 ## and updating below:
-all_methods <- c(
-  "benchmark",
-  "unconstrained",
-  "irtM",
-  "irtMNoVar",
-  "irtAnchors",
-  "irtMAnchors"
+sim_methods <- c(
+  "irtM",              # Old: M_constrained_irt_continuous with Yall+anchors
+  "irtM_wrapper",      # New: irt_m() wrapper, no anchors
+  "irtMAnchors",       # Old: M + fixed anchors
+  "benchmark"
 )
-
-## Subset for run:
-sim_methods <- c("irtM", "irtMAnchors", "benchmark", 
-                 'benchmark_learnsigma')
 
 sim_control <- list(
   nsamp = nsamp,
@@ -127,9 +125,9 @@ num_errors
 
 ##------- Save raw results -------##
 save(all_res,
-     file = file.path(simpath, "irtm_cont_parallel_benchmarkvariant.Rds"))
+     file = file.path(simpath, "irtm_cont_no_yfake.Rds"))
 
 ## Tidydf form:
 results_df <- irtm_cont_results_to_df(all_res)
 saveRDS(results_df,
-        file = file.path(simpath, "irtm_cont_parallel_df_benchmarkvariant.rds"))
+        file = file.path(simpath, "irtm_cont_df_no_yfake.rds"))

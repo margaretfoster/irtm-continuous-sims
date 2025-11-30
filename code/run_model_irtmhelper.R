@@ -78,7 +78,7 @@ run_iter_cont <- function(
       display_progress = progress
     )
     
-  
+    
     updated <- update_method_metrics(
       method_name      = "unconstrained",
       irt_res          = irt_res,
@@ -315,6 +315,61 @@ run_iter_cont <- function(
     
     rm(irt_res)
   }
+  #--------------------------------------#
+  # irt_m() wrapper
+  ## This fixes theta for the anchored rows
+  ## hard orientation constraint; 
+  ## stronger identification
+  #--------------------------------------#
+  if ("irtM_wrapper" %in% methods) {
+    message("Running IRT-M via irt_m() wrapper...")
+    
+    # Need to format M_matrix for irt_m()
+    M_df <- data.frame(
+      item = colnames(Y),
+      stringsAsFactors = FALSE
+    )
+    for (j in 1:d) {
+      M_df[[paste0("dim", j)]] <- M[j, j, ]
+    }
+    
+    irt_res <- irt_m(
+      Y_in = Y,  # No Yall, just real data
+      d = d,
+      M_matrix = M_df,
+      family = "continuous",
+      nburn = nburn,
+      nsamp = nsamp,
+      thin = thin,
+      learn_loadings = FALSE
+    )
+    
+    updated <- update_method_metrics(
+      method_name = "irtM_wrapper",
+      irt_res          = irt_res,
+      true_theta       = true_theta,
+      true_lambda      = true_lambda,
+      theta_mse        = theta_mse,
+      lambda_mse       = lambda_mse,
+      theta_coverage   = theta_coverage,
+      lambda_coverage  = lambda_coverage,
+      theta_gew        = theta_gew,
+      theta_ess        = theta_ess,
+      theta_rhat       = theta_rhat,
+      lambda_corr      = lambda_corr
+    )
+    
+    theta_mse       <- updated$theta_mse
+    lambda_mse      <- updated$lambda_mse
+    theta_coverage  <- updated$theta_coverage
+    lambda_coverage <- updated$lambda_coverage
+    theta_gew       <- updated$theta_gew
+    theta_ess       <- updated$theta_ess
+    theta_rhat      <- updated$theta_rhat
+    lambda_corr     <- updated$lambda_corr
+    
+    rm(irt_res)
+  }
   
   list(
     theta_mse       = theta_mse,
@@ -327,3 +382,4 @@ run_iter_cont <- function(
     lambda_corr     = lambda_corr
   )
 }
+
